@@ -128,27 +128,19 @@
 
     #browserWarning {
       display: none;
-      background: #ffeb3b;
-      color: #000;
-      padding: 10px;
-      border-radius: 6px;
-      text-align: center;
-      margin-bottom: 15px;
-      font-size: 15px;
-    }
-
-    #browserWarning a {
-      display: inline-block;
-      margin-top: 5px;
-      color: #000;
-      text-decoration: underline;
+      background: #fff3cd;
+      border: 1px solid #ffeeba;
+      padding: 15px;
+      border-radius: 10px;
+      color: #856404;
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
   <div id="browserWarning">
-    🔔 แนะนำให้เปิดหน้านี้ผ่านเบราว์เซอร์ (เช่น Chrome, Safari)<br>
-    <a href="https://docs.google.com/spreadsheets/d/1BkC95bDz0WHtYyYe-L4as04MK8_XiBe3Nn1dyZI-Exw/edit" target="_blank">คลิกเพื่อเปิดในเบราว์เซอร์</a>
+    ⚠️ คุณกำลังเปิดหน้านี้ผ่านแอป ซึ่งอาจแสดงผลไม่สมบูรณ์<br>
+    👉 <strong>แนะนำให้เปิดด้วยเบราว์เซอร์</strong> เช่น Chrome, Safari หรือ Firefox เพื่อใช้งานได้เต็มประสิทธิภาพ
   </div>
 
   <div class="top-bar">
@@ -223,13 +215,10 @@
         });
     }
 
-    // โหลดข้อมูลครั้งแรก
     loadData();
+    setInterval(loadData, 300000); // โหลดใหม่ทุก 5 นาที
 
-    // รีเฟรชเว็บทุก 1 นาที
-    setTimeout(() => location.reload(), 60000);
-
-    // ระบบค้นหา
+    // 🔍 ระบบค้นหา
     document.getElementById('searchBox').addEventListener('input', function () {
       const keyword = this.value.toLowerCase();
       const rows = document.querySelectorAll('#data-table tbody tr');
@@ -239,22 +228,23 @@
       });
     });
 
-    // ปุ่มสลับโหมด
+    // 🌙 ปุ่มสลับโหมด
     function toggleMode() {
       const isDark = document.body.classList.toggle('dark');
       localStorage.setItem('theme', isDark ? 'dark' : 'light');
       document.getElementById('modeLabel').textContent = isDark ? 'โหมดกลางคืน' : 'โหมดกลางวัน';
     }
 
-    // โหลดธีมจาก localStorage
+    // ตรวจจับการเปิดจาก in-app browser
     window.addEventListener('DOMContentLoaded', () => {
       const savedTheme = localStorage.getItem('theme');
       if (savedTheme === 'dark') {
         document.body.classList.add('dark');
         document.getElementById('modeLabel').textContent = 'โหมดกลางคืน';
+      } else {
+        document.getElementById('modeLabel').textContent = 'โหมดกลางวัน';
       }
 
-      // ตรวจจับว่ามาจาก in-app browser หรือไม่
       const ua = navigator.userAgent || navigator.vendor || window.opera;
       if (/Line|FBAN|FBAV|Instagram|TikTok/i.test(ua)) {
         document.getElementById('browserWarning').style.display = 'block';
