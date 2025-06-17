@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>ตารางสายตรวจ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #111;
+      --border: #ccc;
+      --hover: #f0f0f0;
+      --accent: #2196f3;
+    }
+
+    body.dark {
+      --bg: #1e1e1e;
+      --text: #f1f1f1;
+      --border: #444;
+      --hover: #333;
+      --accent: #90caf9;
+    }
+
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      transition: 0.3s;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      font-size: 1.8em;
+      margin: 0 0 10px 0;
+      color: var(--accent);
+    }
+
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+    }
+
+    .toggle-switch {
+      width: 50px;
+      height: 26px;
+      background: var(--border);
+      border-radius: 13px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .toggle-switch::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      background: var(--text);
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+
+    body.dark .toggle-switch {
+      background: var(--accent);
+    }
+
+    body.dark .toggle-switch::after {
+      left: 27px;
+      background: var(--bg);
+    }
+
+    #modeLabel {
+      margin-left: 10px;
+      font-size: 14px;
+    }
+
+    #searchBox {
+      display: block;
+      margin: 0 auto 20px;
+      padding: 10px 16px;
+      font-size: 16px;
+      width: 300px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      text-align: center;
+      font-size: 15px;
+    }
+
+    tr:hover {
+      background-color: var(--hover);
+    }
+
+    #table-container {
+      overflow-x: auto;
+    }
+
+    .timestamp {
+      text-align: center;
+      font-size: 14px;
+      color: var(--text);
+      margin-top: 10px;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <h1>ตารางสายตรวจ</h1>
+    <div class="toggle-wrap">
+      <div class="toggle-switch" onclick="toggleMode()" title="สลับโหมดกลางวัน/กลางคืน"></div>
+      <span id="modeLabel">โหมดกลางวัน</span>
+    </div>
+  </div>
+
+  <input type="text" id="searchBox" placeholder="ค้นหา...">
+
+  <div id="table-container">
+    <table id="data-table">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="timestamp" id="lastUpdate"></div>
+
+  <script>
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/1BkC95bDz0WHtYyYe-L4as04MK8_XiBe3Nn1dyZI-Exw/gviz/tq?sheet=แผนตาราง2';
+
+    function convertThaiDigits(str) {
+      return str.replace(/[๐-๙]/g, d => '0123456789'['๐๑๒๓๔๕๖๗๘๙'.indexOf(d)]);
+    }
+
+    function loadData() {
+      fetch(sheetUrl)
+        .then(res => res.text())
+        .then(rep => {
+          const json = JSON.parse(rep.substr(47).slice(0, -2));
+          const cols = json.table.cols.map(c => c.label);
+          const rows = json.table.rows;
+
+          // หา index ของคอลัมน์ที่ไม่ใช่ "หมายเหตุ"
+          const validColIndexes = cols
+            .map((label, index) => ({ label, index }))
+            .filter(col => col.label.trim() !== 'หมายเหตุ');
+
+          const thead = document.querySelector('thead');
+          const tbody = document.querySelector('tbody');
+          thead.innerHTML = '';
+          tbody.innerHTML = '';
+
+          const headRow = document.createElement('tr');
+          validColIndexes.forEach(c => {
+            const th = document.createElement('th');
+            th.textContent = c.label;
+            headRow.appendChild(th);
+          });
+          thead.appendChild(headRow);
+
+          rows.forEach(r => {
+            const tr = document.createElement('tr');
+            validColIndexes.forEach(c => {
+              const cell = r.c[c.index];
+              const text = cell?.v || '';
+              const td = document.createElement('td');
+              td.textContent = convertThaiDigits(String(text));
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+
+          const now = new Date();
+          document.getElementById('lastUpdate').textContent = `อัปเดตล่าสุด: ${now.toLocaleString('th-TH')}`;
+        })
+        .catch(error => {
+          document.getElementById('lastUpdate').textContent = "โหลดข้อมูลไม่สำเร็จ";
+          console.error("โหลดข้อมูลผิดพลาด:", error);
+        });
+    }
+
+    loadData();
+    setInterval(loadData, 300000);
+
+    document.getElementById('searchBox').addEventListener('input', function () {
+      const keyword = this.value.toLowerCase();
+      const rows = document.querySelectorAll('#data-table tbody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(keyword) ? '' : 'none';
+      });
+    });
+
+    function toggleMode() {
+      const isDark = document.body.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      document.getElementById('modeLabel').textContent = isDark ? 'โหมดกลางคืน' : 'โหมดกลางวัน';
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark');
+        document.getElementById('modeLabel').textContent = 'โหมดกลางคืน';
+      } else {
+        document.getElementById('modeLabel').textContent = 'โหมดกลางวัน';
+      }
+    });
+  </script>
+</body>
+</html>
