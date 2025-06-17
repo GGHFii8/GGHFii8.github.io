@@ -162,7 +162,6 @@
           const cols = json.table.cols.map(c => c.label);
           const rows = json.table.rows;
 
-          // หา index ของคอลัมน์ที่ไม่ใช่ "หมายเหตุ"
           const validColIndexes = cols
             .map((label, index) => ({ label, index }))
             .filter(col => col.label.trim() !== 'หมายเหตุ');
@@ -202,8 +201,11 @@
     }
 
     loadData();
-    setInterval(loadData, 300000);
 
+    // 🔁 รีโหลดหน้าเว็บทุก 1 นาที
+    setTimeout(() => location.reload(), 60000);
+
+    // 🔍 ระบบค้นหา
     document.getElementById('searchBox').addEventListener('input', function () {
       const keyword = this.value.toLowerCase();
       const rows = document.querySelectorAll('#data-table tbody tr');
@@ -213,6 +215,7 @@
       });
     });
 
+    // 🌙 ปุ่มสลับโหมด
     function toggleMode() {
       const isDark = document.body.classList.toggle('dark');
       localStorage.setItem('theme', isDark ? 'dark' : 'light');
